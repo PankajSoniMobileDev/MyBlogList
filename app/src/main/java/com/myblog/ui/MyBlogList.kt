@@ -1,5 +1,6 @@
 package com.myblog.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -7,19 +8,23 @@ import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.gson.Gson
+import com.myblog.OnBlogItemClick
 import com.myblog.R
 import com.myblog.adapter.BlogAdapter
 import com.myblog.databinding.ActivityBlogListBinding
+import com.myblog.model.BlogListItem
 import com.myblog.viewmodel.BlogViewModelFactory
 import com.myblog.viewmodel.BlogsViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 
-class MyBlogList : AppCompatActivity() {
+class MyBlogList : AppCompatActivity(), OnBlogItemClick {
 
     private lateinit var adapter: BlogAdapter
     private lateinit var binding: ActivityBlogListBinding
@@ -38,12 +43,18 @@ class MyBlogList : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         viewModel.getBlogsFromServer()
 
-        adapter = BlogAdapter()
+        adapter = BlogAdapter(this)
         setAdapter()
 
         lifecycleScope.launch {
             binding.progressBar.visibility = View.GONE
             viewModel.allBlogs.collectLatest { adapter.submitData(it) }
+        }
+
+        viewModel.commentData.observe(this) {
+            if (it != null) {
+                startActivity(Intent(this, BlogComments::class.java).putExtra("data", Gson().toJson(it)))
+            }
         }
     }
 
@@ -69,6 +80,10 @@ class MyBlogList : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    override fun onBlogClick(post: BlogListItem) {
+        viewModel.onItemClick(post)
     }
 
 }

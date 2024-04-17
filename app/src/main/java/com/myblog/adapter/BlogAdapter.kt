@@ -5,10 +5,11 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
+import com.myblog.OnBlogItemClick
 import com.myblog.model.BlogListItem
 import com.myblog.databinding.RowBlogsItemBinding
 
-class BlogAdapter : PagingDataAdapter<BlogListItem, BlogAdapter.ViewHolder>(diffCallback) {
+class BlogAdapter(private var mListener:OnBlogItemClick) : PagingDataAdapter<BlogListItem, BlogAdapter.ViewHolder>(diffCallback) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -29,6 +30,10 @@ class BlogAdapter : PagingDataAdapter<BlogListItem, BlogAdapter.ViewHolder>(diff
 
         fun bindData(blogList: BlogListItem?) {
             mBinding.blog = blogList
+
+            mBinding.parentView.setOnClickListener {
+                blogList?.let { it1 -> mListener.onBlogClick(it1) }
+            }
         }
     }
 
@@ -36,7 +41,7 @@ class BlogAdapter : PagingDataAdapter<BlogListItem, BlogAdapter.ViewHolder>(diff
         val diffCallback = object : DiffUtil.ItemCallback<BlogListItem>() {
             override fun areItemsTheSame(oldItem: BlogListItem, newItem: BlogListItem): Boolean {
                 return if (oldItem is BlogListItem.Item && newItem is BlogListItem.Item) {
-                    oldItem.blogs.mId == newItem.blogs.mId
+                    oldItem.blogs.id == newItem.blogs.id
                 } else {
                     oldItem == newItem
                 }

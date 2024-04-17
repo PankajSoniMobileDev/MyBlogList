@@ -2,11 +2,13 @@ package com.myblog.viewmodel
 
 import android.app.Application
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.paging.*
 import androidx.paging.map
 import com.myblog.model.BlogListItem
 import com.myblog.db.BlogDB
+import com.myblog.model.BlogCommentList
 import com.myblog.network.ApiService
 import com.myblog.network.RetrofitHelper
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -18,8 +20,8 @@ import kotlinx.coroutines.launch
 
 class BlogsViewModel(application: Application) : ViewModel() {
 
-    var db: BlogDB = BlogDB.get(application.applicationContext)
-
+    private var db: BlogDB = BlogDB.get(application.applicationContext)
+    var commentData: MutableLiveData<MutableList<BlogCommentList>> = MutableLiveData()
     @OptIn(DelicateCoroutinesApi::class) fun getBlogsFromServer() {
         GlobalScope.launch(CoroutineExceptionHandler { _, throwable ->
             println("Error: $throwable")
@@ -45,6 +47,19 @@ class BlogsViewModel(application: Application) : ViewModel() {
             db.blogDao().deleteTable()
             getBlogsFromServer()
         }
+    }
+
+    @OptIn(DelicateCoroutinesApi::class) private fun getBlogsCommentsByBlogID(id: Int) {
+        GlobalScope.launch(CoroutineExceptionHandler { _, throwable ->
+            println("Error: $throwable")
+        }) {
+            val blogsApi = RetrofitHelper.getInstance().create(ApiService::class.java)
+            commentData.postValue(blogsApi.getBlogComments(id).body())
+        }
+    }
+
+    fun onItemClick(blog: BlogListItem) {
+        getBlogsCommentsByBlogID(blog.id)
     }
 
 }
